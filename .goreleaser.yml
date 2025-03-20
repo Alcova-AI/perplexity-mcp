@@ -1,0 +1,69 @@
+project_name: perplexity-mcp
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    binary: perplexity-mcp
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - name: perplexity-mcp
+    tap:
+      owner: Alcova-AI
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@carlosbecker.com
+    homepage: "https://github.com/Alcova-AI/perplexity-mcp"
+    description: "A Model Context Protocol (MCP) server for the Perplexity API"
+    license: "MIT"
+    test: |
+      system "#{bin}/perplexity-mcp --help"
+    install: |
+      bin.install "perplexity-mcp"
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+
+# Verify the artifacts
+# before we upload them
+# release:
+#   prerelease: auto

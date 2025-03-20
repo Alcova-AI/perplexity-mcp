@@ -8,17 +8,32 @@ This MCP server provides integration with the Perplexity API, allowing AI assist
 
 ## Installation
 
+### Using Homebrew (macOS and Linux)
+
 ```sh
-go install github.com/ivanvanderbyl/perplexity-mcp-server@latest
+brew tap alcova-ai/tap
+brew install perplexity-mcp
 ```
 
-Or clone the repository and build manually:
+### Using Go
 
 ```sh
-git clone https://github.com/ivanvanderbyl/perplexity-mcp-server.git
-cd perplexity-mcp-server
+go install github.com/Alcova-AI/perplexity-mcp@latest
+```
+
+### From Source
+
+Clone the repository and build manually:
+
+```sh
+git clone https://github.com/Alcova-AI/perplexity-mcp.git
+cd perplexity-mcp
 go build
 ```
+
+### From Binary Releases
+
+Download pre-built binaries from the [releases page](https://github.com/Alcova-AI/perplexity-mcp/releases).
 
 ## Usage
 
