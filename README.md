@@ -50,6 +50,62 @@ Download pre-built binaries from the [releases page](https://github.com/Alcova-A
 
 ## Usage
 
+This server supports only the `stdio` protocol for MCP communication.
+
+### Recommended: Use as MCP command with Claude Code
+
+Adding to Claude Code:
+
+```sh
+claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp","env":{"PERPLEXITY_API_KEY":"pplx-YOUR-API-KEY-HERE"}}'
+```
+
+That's it! You can now use Perplexity in Claude Code.
+
+### Recommended: Use as MCP command with Claude Desktop
+
+Adding to Claude Desktop:
+
+1. Exit the Claude Desktop MCP config:
+
+```sh
+code ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+2. Add the Perplexity MCP server:
+
+```diff
+  {
+    "mcpServers": {
++        "perplexity-mcp": {
++            "command": "perplexity-mcp",
++            "args": [
++                "--model",
++                "sonar-pro",
++                "--reasoning-model",
++                "sonar-reasoning-pro"
++            ],
++            "env": {
++                "PERPLEXITY_API_KEY": "pplx-YOUR-API-KEY-HERE"
++            }
++        }
+    }
+  }
+```
+
+### Command Line Options
+
+- `--model, -m`: Specify the Perplexity model to use for search (default: "sonar-pro")
+  - Can also be set with the `PERPLEXITY_MODEL` environment variable
+- `--reasoning-model, -r`: Specify the Perplexity model to use for reasoning (default: "sonar-reasoning-pro")
+  - Can also be set with the `PERPLEXITY_REASONING_MODEL` environment variable
+
+Example:
+
+```sh
+perplexity-mcp --model sonar-pro --reasoning-model sonar-reasoning-pro
+```
+
 ### Direct Execution
 
 If you want to run the server directly (not recommended for most users):
@@ -66,192 +122,7 @@ If you want to run the server directly (not recommended for most users):
    perplexity-mcp
    ```
 
-### Recommended: Use as MCP Server
 
-The recommended way to use this tool is through the Claude MCP server system:
-
-```sh
-# Add the MCP server with your API key included
-claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp","env":{"PERPLEXITY_API_KEY":"your-api-key-here"}}'
-```
-
-### Command Line Options
-
-- `--model, -m`: Specify the Perplexity model to use for search (default: "sonar-pro")
-  - Can also be set with the `PERPLEXITY_MODEL` environment variable
-- `--reasoning-model, -r`: Specify the Perplexity model to use for reasoning (default: "sonar-reasoning-pro")
-  - Can also be set with the `PERPLEXITY_REASONING_MODEL` environment variable
-
-Example:
-
-```sh
-perplexity-mcp --model sonar-pro --reasoning-model sonar-reasoning-pro
-```
-
-## Tool Definitions
-
-The server provides the following tools:
-
-### perplexity_ask
-
-Engages in a conversation using the Sonar API for search. Accepts an array of messages (each with a role and content) and returns a chat completion response from the Perplexity model.
-
-**Input Schema:**
-
-```json
-{
-  "messages": [
-    {
-      "role": "string",    // Role of the message (e.g., system, user, assistant)
-      "content": "string"  // The content of the message
-    }
-  ]
-}
-```
-
-### perplexity_reason
-
-Uses the Perplexity reasoning model to perform complex reasoning tasks. Accepts a query string and returns a comprehensive reasoned response.
-
-**Input Schema:**
-
-```json
-{
-  "query": "string"  // The query or problem to reason about
-}
-```
-
-## MCP Integration
-
-This server implements the Model Context Protocol (MCP) using standard input/output (stdin/stdout) streams rather than HTTP, allowing for efficient integration with MCP clients.
-
-To use this server with MCP clients:
-
-1. Add the MCP server with your API key using: 
-   ```
-   claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp","env":{"PERPLEXITY_API_KEY":"your-api-key-here"}}'
-   ```
-2. Configure your MCP client to use this server
-3. The client can then call the following tools:
-   - `perplexity_ask` for search-based queries using Sonar Pro
-   - `perplexity_reason` for complex reasoning tasks using Sonar Reasoning Pro
-
-The server uses the stdin/stdout protocol for MCP communication rather than HTTP, which makes it compatible with the Claude Code MCP app system.
-
-## Usage Examples
-
-### With Claude Code (CLI)
-
-Claude Code can directly use the Perplexity MCP tools when properly configured:
-
-#### Setup
-
-Add the Perplexity MCP server to Claude Code with your API key:
-
-```bash
-claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp","env":{"PERPLEXITY_API_KEY":"your-api-key-here"}}'
-```
-
-#### Example Usage
-
-```bash
-# Direct query using Perplexity search
-claude "Use Perplexity to search for the latest developments in quantum computing"
-
-# Complex reasoning task
-claude "Use Perplexity reasoning to analyze the potential impact of AI on healthcare over the next decade"
-```
-
-
-### With Claude Desktop
-
-#### Setup
-
-1. Set up the Perplexity MCP server with your API key:
-
-   ```bash
-   claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp","env":{"PERPLEXITY_API_KEY":"your-api-key-here"}}'
-   ```
-
-   Then in Claude Desktop:
-   - Go to Settings (gear icon)
-   - Select the "Models & Tools" section
-   - Navigate to Tools > Local Tools
-   - Add the Perplexity tool if needed
-
-#### Example Usage
-
-Once configured, you can ask Claude to use Perplexity with prompts like:
-
-- "Use Perplexity to search for information about recent breakthroughs in fusion energy."
-- "Use Perplexity to find the latest research on quantum computing applications."
-- "Use the Perplexity reasoning tool to analyze the environmental impact of different energy sources."
-- "Ask Perplexity to reason through the potential economic effects of central bank digital currencies."
-
-### With Cursor
-
-#### Setup
-
-1. Set up the Perplexity MCP server with your API key:
-
-   ```bash
-   claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp","env":{"PERPLEXITY_API_KEY":"your-api-key-here"}}'
-   ```
-
-2. In Cursor:
-   - Open Settings (⌘+,)
-   - Navigate to the "AI" section
-   - Find "MCP Tools Configuration"
-   - Enable the Perplexity MCP tool
-   - Click "Save" or "Apply"
-
-#### Example Usage
-
-Once configured, you can use Perplexity within Cursor's chat interface:
-
-- "Use Perplexity to find information about best practices for Go error handling."
-- "Use Perplexity to search for examples of implementing GraphQL authentication."
-- "Use Perplexity reasoning to analyze the tradeoffs between different database choices for a high-throughput API."
-- "Ask Perplexity to reason through the pros and cons of microservices versus monolithic architecture for my project."
-
-Cursor will seamlessly call the Perplexity API through the MCP server, allowing you to access up-to-date information and reasoning capabilities directly in your development environment.
-
-### JSON Format for Tool Calls
-
-Here are the JSON formats for calling the tools directly via MCP:
-
-#### perplexity_ask
-
-```json
-{
-  "method": "tools/call",
-  "params": {
-    "name": "perplexity_ask",
-    "arguments": {
-      "messages": [
-        {
-          "role": "user",
-          "content": "What is the capital of France?"
-        }
-      ]
-    }
-  }
-}
-```
-
-#### perplexity_reason
-
-```json
-{
-  "method": "tools/call",
-  "params": {
-    "name": "perplexity_reason",
-    "arguments": {
-      "query": "Analyze the pros and cons of microservice architecture versus monolithic applications."
-    }
-  }
-}
-```
 
 ## License
 
