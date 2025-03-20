@@ -1,18 +1,22 @@
 {
   "name": "perplexity-mcp",
-  "version": "0.1.0",
-  "description": "A Model Context Protocol server for the Perplexity API, allowing access to Perplexity's Sonar model through MCP.",
+  "version": "0.2.0",
+  "description": "A Model Context Protocol server for the Perplexity API, allowing access to Perplexity's Sonar models for search and reasoning through MCP.",
   "author": "Ivan Vanderbyl",
   "license": "MIT",
   "categories": ["ai", "llm", "api"],
-  "keywords": ["perplexity", "sonar", "chat", "completion", "mcp"],
+  "keywords": ["perplexity", "sonar", "chat", "completion", "reasoning", "mcp"],
   "executable": {
     "path": "perplexity-mcp"
   },
   "tools": [
     {
       "name": "perplexity_ask",
-      "description": "Engages in a conversation using the Sonar API. Accepts an array of messages (each with a role and content) and returns a ask completion response from the Perplexity model."
+      "description": "Engages in a conversation using the Sonar API for search. Accepts an array of messages (each with a role and content) and returns a chat completion response from the Perplexity model."
+    },
+    {
+      "name": "perplexity_reason",
+      "description": "Uses the Perplexity reasoning model to perform complex reasoning tasks. Accepts a query string and returns a comprehensive reasoned response."
     }
   ],
   "env": [
@@ -23,7 +27,12 @@
     },
     {
       "name": "PERPLEXITY_MODEL",
-      "description": "Model identifier for the Perplexity API (default: sonar-pro)",
+      "description": "Model identifier for search queries (default: sonar-pro)",
+      "required": false
+    },
+    {
+      "name": "PERPLEXITY_REASONING_MODEL",
+      "description": "Model identifier for reasoning tasks (default: sonar-reasoning-pro)",
       "required": false
     }
   ]
