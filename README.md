@@ -64,19 +64,19 @@ If you want to run the server directly (not recommended for most users):
    perplexity-mcp
    ```
 
-### Recommended: Use as MCP App
+### Recommended: Use as MCP Server
 
-The recommended way to use this tool is through the Claude MCP app system:
+The recommended way to use this tool is through the Claude MCP server system:
 
 ```sh
-# Install the MCP app
-claude mcp app install perplexity-mcp
+# Add the MCP server
+claude mcp add perplexity-mcp perplexity-mcp
 
 # Set your API key (only needed once)
 export PERPLEXITY_API_KEY=your-api-key-here
 
 # Use with Claude Code
-claude --mcp-app perplexity-mcp
+claude --mcp-server perplexity-mcp
 ```
 
 ### Command Line Options
@@ -131,7 +131,7 @@ This server implements the Model Context Protocol (MCP) using standard input/out
 
 To use this server with MCP clients:
 
-1. Install the MCP app using `claude mcp app install perplexity-mcp`
+1. Add the MCP server using `claude mcp add perplexity-mcp perplexity-mcp`
 2. Set your Perplexity API key as an environment variable
 3. Configure your MCP client to use this app
 4. The client can then call the following tools:
@@ -148,9 +148,13 @@ Claude Code can directly use the Perplexity MCP tools when properly configured:
 
 #### Setup
 
-1. Install the MCP app for Claude Code:
+1. Add the Perplexity MCP server to Claude Code:
    ```bash
-   claude mcp app install perplexity-mcp
+   # Using the interactive wizard
+   claude mcp add perplexity-mcp perplexity-mcp
+   
+   # Or using add-json
+   claude mcp add-json perplexity-mcp '{"type":"stdio","command":"perplexity-mcp"}'
    ```
 
 2. Set your Perplexity API key (only needed once):
@@ -158,14 +162,14 @@ Claude Code can directly use the Perplexity MCP tools when properly configured:
    export PERPLEXITY_API_KEY=your-api-key
    ```
 
-3. Use Claude Code with the Perplexity MCP app:
+3. Use Claude Code with the Perplexity MCP server:
    ```bash
-   claude --mcp-app perplexity-mcp
+   claude --mcp-server perplexity-mcp
    ```
 
    This can be added to your `~/.clauderc` configuration file to make it permanent:
    ```
-   mcp-app = ["perplexity-mcp"]
+   mcp-server = ["perplexity-mcp"]
    ```
 
 #### Example Usage
@@ -178,29 +182,31 @@ claude "Use Perplexity to search for the latest developments in quantum computin
 claude "Use Perplexity reasoning to analyze the potential impact of AI on healthcare over the next decade"
 ```
 
-You can also specify the MCP app for a single command:
+You can also specify the MCP server for a single command:
 ```bash
-claude "What are the latest machine learning frameworks?" --mcp-app perplexity-mcp
+claude "What are the latest machine learning frameworks?" --mcp-server perplexity-mcp
 ```
 
 ### With Claude Desktop
 
 #### Setup
 
-1. Install the Perplexity MCP app via the Claude Desktop interface:
+1. Add the Perplexity MCP server via the Claude Desktop interface:
    - In Claude Desktop, go to Settings (gear icon)
    - Select the "Models & Tools" section
    - Navigate to Tools > Local Tools
    - Click "Add Local Tool" and select Perplexity
    - Configure with your API key when prompted
 
-   Alternatively, you can manually install the MCP app and set your API key:
+   Alternatively, you can manually set up the MCP server and set your API key:
    ```bash
    # Set your API key
    export PERPLEXITY_API_KEY=your-api-key
    
-   # Install the MCP app if needed
-   claude mcp app install perplexity-mcp
+   # Add the MCP server to Claude Desktop
+   # This varies by platform - you may need to use Claude Desktop's interface
+   # or import using:
+   claude mcp add-from-claude-desktop
    ```
 
 #### Example Usage
@@ -216,10 +222,10 @@ Once configured, you can ask Claude to use Perplexity with prompts like:
 
 #### Setup
 
-1. Install the Perplexity MCP app:
+1. Set up the Perplexity MCP server:
    ```bash
-   # Install the MCP app
-   claude mcp app install perplexity-mcp
+   # Add the MCP server (if not already added in Claude Code)
+   claude mcp add perplexity-mcp perplexity-mcp
    
    # Set your API key
    export PERPLEXITY_API_KEY=your-api-key
