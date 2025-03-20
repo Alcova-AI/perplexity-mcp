@@ -1,10 +1,23 @@
 # Perplexity MCP Server
 
-A Model Context Protocol (MCP) server for the Perplexity API written in Go.
+A Model Context Protocol (MCP) server for the Perplexity API written in Go. This server enables AI assistants like Claude (Code and Desktop) and Cursor to seamlessly access Perplexity's powerful search and reasoning capabilities directly from their interfaces.
 
 ## Description
 
-This MCP server provides integration with the Perplexity API, allowing AI assistants like Claude to interact with Perplexity's large language models via the Sonar API. It implements a tool called `perplexity_ask` that accepts conversation messages and returns a chat completion from Perplexity's model.
+The Perplexity MCP Server acts as a bridge between AI assistants and the Perplexity API, allowing them to:
+
+1. **Search the web and retrieve up-to-date information** using Perplexity's Sonar Pro model via the `perplexity_ask` tool
+2. **Perform complex reasoning tasks** using Perplexity's Sonar Reasoning Pro model via the `perplexity_reason` tool
+
+This integration lets AI assistants like Claude access real-time information and specialized reasoning capabilities without leaving their interface, creating a seamless experience for users.
+
+### Key Benefits
+
+- **Access to real-time information**: Get current data, news, and information from the web
+- **Enhanced reasoning capabilities**: Leverage specialized models for complex problem-solving tasks
+- **Seamless integration**: Works natively with Claude Code, Claude Desktop, and Cursor
+- **Simple installation**: Quick setup with Homebrew, Go, or pre-built binaries
+- **Customizable**: Configure which Perplexity models to use for different tasks
 
 ## Installation
 
@@ -111,40 +124,91 @@ To use this server with MCP clients:
 
 Claude Code can directly use the Perplexity MCP tools when properly configured:
 
-```bash
-# First, start the MCP server
-export PERPLEXITY_API_KEY=your-api-key
-perplexity-mcp
+#### Setup
 
-# In another terminal, use Claude Code with MCP support
-claude "Write a summary of the latest developments in quantum computing" \
-  --mcp-server perplexity:perplexity-mcp
+1. Start the MCP server in a dedicated terminal:
+   ```bash
+   export PERPLEXITY_API_KEY=your-api-key
+   perplexity-mcp
+   ```
+
+2. In a separate terminal, use Claude Code with the MCP server:
+   ```bash
+   claude --mcp-server perplexity:perplexity-mcp
+   ```
+
+   This flag can be added to your `~/.clauderc` configuration file to make it permanent:
+   ```
+   mcp-server = ["perplexity:perplexity-mcp"]
+   ```
+
+#### Example Usage
+
+```bash
+# Direct query using Perplexity search
+claude "Use Perplexity to search for the latest developments in quantum computing"
+
+# Complex reasoning task
+claude "Use Perplexity reasoning to analyze the potential impact of AI on healthcare over the next decade"
 ```
 
-When starting Claude Code, you can specify the MCP server with:
-
+You can also specify the MCP server for a single command:
 ```bash
-claude --mcp-server perplexity:perplexity-mcp
+claude "What are the latest machine learning frameworks?" --mcp-server perplexity:perplexity-mcp
 ```
 
 ### With Claude Desktop
 
-In Claude Desktop, first enable Perplexity in the Models & Tools section of the settings. Once enabled, you can ask Claude to use the tools:
+#### Setup
 
-"Use Perplexity to search for information about recent breakthroughs in fusion energy."
+1. Start the Perplexity MCP server:
+   ```bash
+   export PERPLEXITY_API_KEY=your-api-key
+   perplexity-mcp
+   ```
 
-"Use the Perplexity reasoning tool to analyze the environmental impact of different energy sources."
+2. In Claude Desktop:
+   - Go to Settings (gear icon)
+   - Select the "Models & Tools" section
+   - Enable "Perplexity" in the Tools section
+   - If needed, configure the server URL (typically `http://localhost:8000` by default)
+
+#### Example Usage
+
+Once configured, you can ask Claude to use Perplexity with prompts like:
+
+- "Use Perplexity to search for information about recent breakthroughs in fusion energy."
+- "Use Perplexity to find the latest research on quantum computing applications."
+- "Use the Perplexity reasoning tool to analyze the environmental impact of different energy sources."
+- "Ask Perplexity to reason through the potential economic effects of central bank digital currencies."
 
 ### With Cursor
 
-In Cursor, you can use the Perplexity MCP tools within your development workflow:
+#### Setup
 
-1. Connect Cursor to the Perplexity MCP server in the settings
-2. Ask Cursor to use Perplexity for research or reasoning tasks:
+1. Start the Perplexity MCP server:
+   ```bash
+   export PERPLEXITY_API_KEY=your-api-key
+   perplexity-mcp
+   ```
 
-"Use Perplexity to find information about best practices for Go error handling."
+2. In Cursor:
+   - Open Settings (⌘+,) 
+   - Navigate to the "AI" section
+   - Find "MCP Server Configuration"
+   - Add the Perplexity MCP server with label "perplexity" and URL "http://localhost:8000"
+   - Click "Save" or "Apply"
 
-"Use Perplexity reasoning to analyze the tradeoffs between different database choices for a high-throughput API."
+#### Example Usage
+
+Once configured, you can use Perplexity within Cursor's chat interface:
+
+- "Use Perplexity to find information about best practices for Go error handling."
+- "Use Perplexity to search for examples of implementing GraphQL authentication."
+- "Use Perplexity reasoning to analyze the tradeoffs between different database choices for a high-throughput API."
+- "Ask Perplexity to reason through the pros and cons of microservices versus monolithic architecture for my project."
+
+Cursor will seamlessly call the Perplexity API through the MCP server, allowing you to access up-to-date information and reasoning capabilities directly in your development environment.
 
 ### JSON Format for Tool Calls
 
