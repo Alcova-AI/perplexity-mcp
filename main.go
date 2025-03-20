@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
+	"runtime/debug"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -17,6 +19,13 @@ import (
 const (
 	apiURL = "https://api.perplexity.ai/chat/completions"
 )
+
+// PerplexityConfig holds configuration for the Perplexity API
+type PerplexityConfig struct {
+	APIKey         string
+	Model          string
+	ReasoningModel string
+}
 
 // Message represents a message in the chat completion request
 type Message struct {
@@ -105,6 +114,115 @@ func performChatCompletion(apiKey string, model string, messages []Message) (str
 	return messageContent, nil
 }
 
+// parseMessagesFromRequest extracts and validates messages from an MCP tool request
+func parseMessagesFromRequest(request mcp.CallToolRequest) ([]Message, error) {
+	messagesRaw, ok := request.Params.Arguments["messages"].([]any)
+	if !ok {
+		return nil, fmt.Errorf("'messages' must be an array")
+	}
+
+	var messages []Message
+	for _, msgRaw := range messagesRaw {
+		msgMap, ok := msgRaw.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("invalid message format")
+		}
+
+		role, ok := msgMap["role"].(string)
+		if !ok {
+			return nil, fmt.Errorf("message must have a 'role' field of type string")
+		}
+
+		content, ok := msgMap["content"].(string)
+		if !ok {
+			return nil, fmt.Errorf("message must have a 'content' field of type string")
+		}
+
+		messages = append(messages, Message{Role: role, Content: content})
+	}
+
+	return messages, nil
+}
+
+// handlePerplexityAsk handles the perplexity_ask tool request
+func handlePerplexityAsk(config PerplexityConfig) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		messages, err := parseMessagesFromRequest(request)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+
+		result, err := performChatCompletion(config.APIKey, config.Model, messages)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error calling Perplexity API: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(result), nil
+	}
+}
+
+// handlePerplexityReason handles the perplexity_reason tool request
+func handlePerplexityReason(config PerplexityConfig) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		query, ok := request.Params.Arguments["query"].(string)
+		if !ok {
+			return mcp.NewToolResultError("'query' must be a string"), nil
+		}
+
+		messages := []Message{
+			{Role: "system", Content: "You are a reasoning assistant focused on solving complex problems through step-by-step reasoning."},
+			{Role: "user", Content: query},
+		}
+
+		result, err := performChatCompletion(config.APIKey, config.ReasoningModel, messages)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error calling Perplexity API: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(result), nil
+	}
+}
+
+// registerPerplexityAskTool creates and registers the perplexity_ask tool
+func registerPerplexityAskTool(s *server.MCPServer, config PerplexityConfig) {
+	perplexityTool := mcp.NewTool("perplexity_ask",
+		mcp.WithDescription("Engages in a conversation using the Perplexity to search the internet and answer questions. Accepts an array of messages (each with a role and content) and returns a chat completion response from the Perplexity model."),
+		mcp.WithArray("messages",
+			mcp.Required(),
+			mcp.Description("Array of conversation messages"),
+			mcp.Items(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"role": map[string]any{
+						"type":        "string",
+						"description": "Role of the message (e.g., system, user, assistant)",
+					},
+					"content": map[string]any{
+						"type":        "string",
+						"description": "The content of the message",
+					},
+				},
+				"required": []string{"role", "content"},
+			}),
+		),
+	)
+
+	s.AddTool(perplexityTool, handlePerplexityAsk(config))
+}
+
+// registerPerplexityReasonTool creates and registers the perplexity_reason tool
+func registerPerplexityReasonTool(s *server.MCPServer, config PerplexityConfig) {
+	reasoningTool := mcp.NewTool("perplexity_reason",
+		mcp.WithDescription("Uses the Perplexity reasoning model to perform complex reasoning tasks. Accepts a query string and returns a comprehensive reasoned response."),
+		mcp.WithString("query",
+			mcp.Required(),
+			mcp.Description("The query or problem to reason about"),
+		),
+	)
+
+	s.AddTool(reasoningTool, handlePerplexityReason(config))
+}
+
 func main() {
 	app := &cli.App{
 		Name:  "perplexity-mcp",
@@ -133,117 +251,28 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			// Get API key from environment variable
-			apiKey := c.String("api-key")
+			// Create configuration from CLI arguments
+			config := PerplexityConfig{
+				APIKey:         c.String("api-key"),
+				Model:          c.String("model"),
+				ReasoningModel: c.String("reasoning-model"),
+			}
 
-			// Get model from command line argument or flag
-			model := c.String("model")
-			reasoningModel := c.String("reasoning-model")
+			buildInfo, ok := debug.ReadBuildInfo()
+			version := "v0.0.1"
+			if ok {
+				version = buildInfo.Main.Version
+			}
 
-			// Create a new MCP server using the mcp-go library
+			// Create a new MCP server
 			s := server.NewMCPServer(
 				"perplexity-mcp",
-				"0.2.0",
+				version,
 			)
 
-			// Add the Perplexity ask tool
-			perplexityTool := mcp.NewTool("perplexity_ask",
-				mcp.WithDescription("Engages in a conversation using the Perplexity to search and reason about the query. "+
-					"Accepts an array of messages (each with a role and content) "+
-					"and returns a chat completion response from the Perplexity model."),
-				mcp.WithArray("messages",
-					mcp.Required(),
-					mcp.Description("Array of conversation messages"),
-					mcp.Items(map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"role": map[string]any{
-								"type":        "string",
-								"description": "Role of the message (e.g., system, user, assistant)",
-							},
-							"content": map[string]any{
-								"type":        "string",
-								"description": "The content of the message",
-							},
-						},
-						"required": []string{"role", "content"},
-					}),
-				),
-			)
-
-			// Define the handler for the perplexity_ask tool
-			s.AddTool(perplexityTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-				// Extract messages from request
-				messagesRaw, ok := request.Params.Arguments["messages"].([]any)
-				if !ok {
-					return mcp.NewToolResultError("'messages' must be an array"), nil
-				}
-
-				// Convert messages to the correct format
-				var messages []Message
-				for _, msgRaw := range messagesRaw {
-					msgMap, ok := msgRaw.(map[string]any)
-					if !ok {
-						return mcp.NewToolResultError("Invalid message format"), nil
-					}
-
-					role, ok := msgMap["role"].(string)
-					if !ok {
-						return mcp.NewToolResultError("Message must have a 'role' field of type string"), nil
-					}
-
-					content, ok := msgMap["content"].(string)
-					if !ok {
-						return mcp.NewToolResultError("Message must have a 'content' field of type string"), nil
-					}
-
-					messages = append(messages, Message{Role: role, Content: content})
-				}
-
-				// Call the Perplexity API
-				result, err := performChatCompletion(apiKey, model, messages)
-				if err != nil {
-					return mcp.NewToolResultError(fmt.Sprintf("Error calling Perplexity API: %v", err)), nil
-				}
-
-				// Return the result
-				return mcp.NewToolResultText(result), nil
-			})
-
-			// Add the Perplexity reasoning tool
-			reasoningTool := mcp.NewTool("perplexity_reason",
-				mcp.WithDescription("Uses the Perplexity reasoning model to perform complex reasoning tasks. "+
-					"Accepts a query string and returns a comprehensive reasoned response."),
-				mcp.WithString("query",
-					mcp.Required(),
-					mcp.Description("The query or problem to reason about"),
-				),
-			)
-
-			// Define the handler for the perplexity_reason tool
-			s.AddTool(reasoningTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-				// Extract query from request
-				query, ok := request.Params.Arguments["query"].(string)
-				if !ok {
-					return mcp.NewToolResultError("'query' must be a string"), nil
-				}
-
-				// Create a message for reasoning
-				messages := []Message{
-					{Role: "system", Content: "You are a reasoning assistant focused on solving complex problems through step-by-step reasoning."},
-					{Role: "user", Content: query},
-				}
-
-				// Call the Perplexity API with the reasoning model
-				result, err := performChatCompletion(apiKey, reasoningModel, messages)
-				if err != nil {
-					return mcp.NewToolResultError(fmt.Sprintf("Error calling Perplexity API: %v", err)), nil
-				}
-
-				// Return the result
-				return mcp.NewToolResultText(result), nil
-			})
-
+			// Register tools
+			registerPerplexityAskTool(s, config)
+			registerPerplexityReasonTool(s, config)
 
 			// Start the server
 			if err := server.ServeStdio(s); err != nil {
@@ -256,6 +285,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
+		slog.Error("Server error", "error", err)
 		os.Exit(1)
 	}
 }
