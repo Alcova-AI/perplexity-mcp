@@ -50,16 +50,33 @@ Download pre-built binaries from the [releases page](https://github.com/Alcova-A
 
 ## Usage
 
-Before running the server, set your Perplexity API key as an environment variable:
+### Direct Execution
+
+If you want to run the server directly (not recommended for most users):
+
+1. Set your Perplexity API key as an environment variable:
+   ```sh
+   export PERPLEXITY_API_KEY=your-api-key-here
+   ```
+
+2. Run the server:
+   ```sh
+   perplexity-mcp
+   ```
+
+### Recommended: Use as MCP App
+
+The recommended way to use this tool is through the Claude MCP app system:
 
 ```sh
+# Install the MCP app
+claude mcp app install perplexity-mcp
+
+# Set your API key (only needed once)
 export PERPLEXITY_API_KEY=your-api-key-here
-```
 
-Run the server:
-
-```sh
-perplexity-mcp
+# Use with Claude Code
+claude --mcp-app perplexity-mcp
 ```
 
 ### Command Line Options
@@ -110,13 +127,18 @@ Uses the Perplexity reasoning model to perform complex reasoning tasks. Accepts 
 
 ## MCP Integration
 
+This server implements the Model Context Protocol (MCP) using standard input/output (stdin/stdout) streams rather than HTTP, allowing for efficient integration with MCP clients.
+
 To use this server with MCP clients:
 
-1. Start the server using the instructions above
-2. Configure your MCP client to use this server
-3. The client can then call the following tools:
+1. Install the MCP app using `claude mcp app install perplexity-mcp`
+2. Set your Perplexity API key as an environment variable
+3. Configure your MCP client to use this app
+4. The client can then call the following tools:
    - `perplexity_ask` for search-based queries using Sonar Pro
    - `perplexity_reason` for complex reasoning tasks using Sonar Reasoning Pro
+
+The server uses the stdin/stdout protocol for MCP communication rather than HTTP, which makes it compatible with the Claude Code MCP app system.
 
 ## Usage Examples
 
@@ -126,20 +148,24 @@ Claude Code can directly use the Perplexity MCP tools when properly configured:
 
 #### Setup
 
-1. Start the MCP server in a dedicated terminal:
+1. Install the MCP app for Claude Code:
+   ```bash
+   claude mcp app install perplexity-mcp
+   ```
+
+2. Set your Perplexity API key (only needed once):
    ```bash
    export PERPLEXITY_API_KEY=your-api-key
-   perplexity-mcp
    ```
 
-2. In a separate terminal, use Claude Code with the MCP server:
+3. Use Claude Code with the Perplexity MCP app:
    ```bash
-   claude --mcp-server perplexity:perplexity-mcp
+   claude --mcp-app perplexity-mcp
    ```
 
-   This flag can be added to your `~/.clauderc` configuration file to make it permanent:
+   This can be added to your `~/.clauderc` configuration file to make it permanent:
    ```
-   mcp-server = ["perplexity:perplexity-mcp"]
+   mcp-app = ["perplexity-mcp"]
    ```
 
 #### Example Usage
@@ -152,26 +178,30 @@ claude "Use Perplexity to search for the latest developments in quantum computin
 claude "Use Perplexity reasoning to analyze the potential impact of AI on healthcare over the next decade"
 ```
 
-You can also specify the MCP server for a single command:
+You can also specify the MCP app for a single command:
 ```bash
-claude "What are the latest machine learning frameworks?" --mcp-server perplexity:perplexity-mcp
+claude "What are the latest machine learning frameworks?" --mcp-app perplexity-mcp
 ```
 
 ### With Claude Desktop
 
 #### Setup
 
-1. Start the Perplexity MCP server:
-   ```bash
-   export PERPLEXITY_API_KEY=your-api-key
-   perplexity-mcp
-   ```
-
-2. In Claude Desktop:
-   - Go to Settings (gear icon)
+1. Install the Perplexity MCP app via the Claude Desktop interface:
+   - In Claude Desktop, go to Settings (gear icon)
    - Select the "Models & Tools" section
-   - Enable "Perplexity" in the Tools section
-   - If needed, configure the server URL (typically `http://localhost:8000` by default)
+   - Navigate to Tools > Local Tools
+   - Click "Add Local Tool" and select Perplexity
+   - Configure with your API key when prompted
+
+   Alternatively, you can manually install the MCP app and set your API key:
+   ```bash
+   # Set your API key
+   export PERPLEXITY_API_KEY=your-api-key
+   
+   # Install the MCP app if needed
+   claude mcp app install perplexity-mcp
+   ```
 
 #### Example Usage
 
@@ -186,17 +216,20 @@ Once configured, you can ask Claude to use Perplexity with prompts like:
 
 #### Setup
 
-1. Start the Perplexity MCP server:
+1. Install the Perplexity MCP app:
    ```bash
+   # Install the MCP app
+   claude mcp app install perplexity-mcp
+   
+   # Set your API key
    export PERPLEXITY_API_KEY=your-api-key
-   perplexity-mcp
    ```
 
 2. In Cursor:
    - Open Settings (⌘+,) 
    - Navigate to the "AI" section
-   - Find "MCP Server Configuration"
-   - Add the Perplexity MCP server with label "perplexity" and URL "http://localhost:8000"
+   - Find "MCP Tools Configuration"
+   - Enable the Perplexity MCP tool
    - Click "Save" or "Apply"
 
 #### Example Usage
